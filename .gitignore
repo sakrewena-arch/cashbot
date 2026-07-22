@@ -10,6 +10,7 @@ node_modules/
 # Build
 dist/
 build/
+.next/
 
 # Environnement
 .env
@@ -20,9 +21,6 @@ build/
 logs/
 *.log
 npm-debug.log*
-
-# Base de données
-prisma/migrations/
 
 # Uploads
 uploads/*
@@ -49,3 +47,10 @@ coverage/
 # Temp
 tmp/
 temp/
+
+# Base de données SQLite
+prisma/*.db
+prisma/*.db-journal
+
+# Admin (séparé du bot)
+admin/
