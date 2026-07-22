@@ -52,5 +52,3 @@ temp/
 prisma/*.db
 prisma/*.db-journal
 
-# Admin (séparé du bot)
-admin/
