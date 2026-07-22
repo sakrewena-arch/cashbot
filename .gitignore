@@ -1,0 +1,51 @@
+# ============================================================
+# CASHBOT - Fichiers ignorés par Git
+# ============================================================
+
+# Dépendances
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+
+# Environnement
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Base de données
+prisma/migrations/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.pem
+
+# Docker
+docker-data/
+
+# Tests
+coverage/
+
+# Temp
+tmp/
+temp/

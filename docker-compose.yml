@@ -1,0 +1,113 @@
+# ============================================================
+# CASHBOT - Docker Compose
+# ============================================================
+# Orchestration des conteneurs pour le développement et la production
+# ============================================================
+
+version: '3.8'
+
+services:
+  # === APPLICATION PRINCIPALE ===
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cashbot-app
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=postgresql://${DB_USER:-cashbot}:${DB_PASSWORD:-cashbot123}@db:5432/${DB_NAME:-cashbot}
+      - REDIS_URL=redis://redis:6379
+      - BOT_TOKEN=${BOT_TOKEN}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_IDS=${ADMIN_IDS}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - cashbot-network
+    healthcheck:
+      test: ["CMD", "node", "dist/healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # === POSTGRESQL ===
+  db:
+    image: postgres:16-alpine
+    container_name: cashbot-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER:-cashbot}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-cashbot123}
+      - POSTGRES_DB=${DB_NAME:-cashbot}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./prisma:/app/prisma
+    networks:
+      - cashbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cashbot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === REDIS ===
+  redis:
+    image: redis:7-alpine
+    container_name: cashbot-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis-data:/data
+    networks:
+      - cashbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === PM2 (Gestionnaire de processus) ===
+  pm2:
+    image: keymetrics/pm2:18-alpine
+    container_name: cashbot-pm2
+    restart: unless-stopped
+    volumes:
+      - ./ecosystem.config.js:/app/ecosystem.config.js
+      - ./dist:/app/dist
+      - ./node_modules:/app/node_modules
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    working_dir: /app
+    command: pm2-runtime ecosystem.config.js
+    depends_on:
+      - app
+      - db
+      - redis
+    networks:
+      - cashbot-network
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  cashbot-network:
+    driver: bridge

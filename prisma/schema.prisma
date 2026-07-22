@@ -1,0 +1,319 @@
+// ============================================================
+// CASHBOT - Prisma Schema (SQLite pour développement)
+// Pour Supabase, utiliser le fichier schema.supabase.prisma
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  telegramId       String    @unique
+  username         String?
+  firstName        String?
+  lastName         String?
+  languageCode     String    @default("fr")
+  status           String    @default("ACTIVE")
+  role             String    @default("USER")
+  
+  referralCode     String    @unique @default(uuid())
+  referredById     String?
+  referredBy       User?     @relation("Referral", fields: [referredById], references: [id])
+  referrals        User[]    @relation("Referral")
+  referralEarnings Float     @default(0)
+  referralCount    Int       @default(0)
+  
+  balance          Float     @default(0)
+  pendingBalance   Float     @default(0)
+  totalEarned      Float     @default(0)
+  totalWithdrawn   Float     @default(0)
+  
+  lastDailyBonus   DateTime?
+  lastWeeklyBonus  DateTime?
+  bonusStreak      Int       @default(0)
+  
+  isVerified       Boolean   @default(false)
+  isOnboarded      Boolean   @default(false)
+  joinedChannels   Boolean   @default(false)
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  transactions        Transaction[]
+  taskCompletions     TaskCompletion[]
+  withdrawals         Withdrawal[]
+  notifications       Notification[]
+  submittedProofs     Proof[]
+  usedPromoCodes      UserPromoCode[]
+  channelChecks       UserChannelCheck[]
+}
+
+model RequiredChannel {
+  id          String   @id @default(uuid())
+  channelId   String   @unique
+  channelName String
+  channelUrl  String
+  description String?
+  isActive    Boolean  @default(true)
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  checks      UserChannelCheck[]
+}
+
+model UserChannelCheck {
+  id        String   @id @default(uuid())
+  userId    String
+  channelId String
+  isMember  Boolean  @default(false)
+  checkedAt DateTime @default(now())
+  
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   RequiredChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, channelId])
+}
+
+model Task {
+  id                  String  @id @default(uuid())
+  title               String
+  description         String?
+  instructions        String?
+  imageUrl            String?
+  videoUrl            String?
+  linkUrl             String?
+  icon                String  @default("🎯")
+  
+  reward              Float   @default(0)
+  currency            String  @default("EUR")
+  
+  maxParticipants     Int?
+  maxPerUser          Int     @default(1)
+  currentParticipants Int     @default(0)
+  
+  startDate           DateTime?
+  endDate             DateTime?
+  minTimeMinutes      Int?
+  durationMinutes     Int?
+  
+  categoryId          String?
+  allowedCountries    String  @default("[]")
+  allowedLanguages    String  @default("[]")
+  requiredLevel       Int     @default(0)
+  
+  type                String
+  validationMode      String
+  proofType           String?
+  status              String  @default("DRAFT")
+  
+  webhookUrl          String?
+  apiEndpoint         String?
+  apiKey              String?
+  
+  targetChannelId     String?
+  targetGroupId       String?
+  
+  createdById         String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  category            TaskCategory? @relation(fields: [categoryId], references: [id])
+  completions         TaskCompletion[]
+}
+
+model TaskCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  icon        String   @default("📁")
+  color       String   @default("#6366f1")
+  isActive    Boolean  @default(true)
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  
+  tasks       Task[]
+}
+
+model TaskCompletion {
+  id              String   @id @default(uuid())
+  userId          String
+  taskId          String
+  status          String   @default("PENDING")
+  
+  progress        Int      @default(0)
+  maxProgress     Int      @default(1)
+  attempts        Int      @default(0)
+  
+  validatedById   String?
+  validatedAt     DateTime?
+  rejectionReason String?
+  adminComment    String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  proofs          Proof[]
+  
+  @@unique([userId, taskId])
+}
+
+model Proof {
+  id           String   @id @default(uuid())
+  completionId String
+  userId       String
+  type         String
+  fileUrl      String?
+  filePath     String?
+  content      String?
+  mimeType     String?
+  fileSize     Int?
+  
+  createdAt    DateTime        @default(now())
+  
+  completion   TaskCompletion  @relation(fields: [completionId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String
+  amount        Float
+  fee           Float    @default(0)
+  balanceBefore Float
+  balanceAfter  Float
+  status        String   @default("COMPLETED")
+  description   String?
+  reference     String?
+  
+  createdAt     DateTime @default(now())
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Withdrawal {
+  id            String   @id @default(uuid())
+  userId        String
+  amount        Float
+  fee           Float    @default(0)
+  method        String
+  accountInfo   String
+  status        String   @default("PENDING")
+  adminComment  String?
+  processedById String?
+  processedAt   DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PromoCode {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  description String?
+  reward      Float
+  maxUses     Int      @default(1)
+  currentUses Int      @default(0)
+  maxPerUser  Int      @default(1)
+  isActive    Boolean  @default(true)
+  startsAt    DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  
+  users       UserPromoCode[]
+}
+
+model UserPromoCode {
+  id      String   @id @default(uuid())
+  userId  String
+  promoId String
+  usedAt  DateTime @default(now())
+  
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode PromoCode @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, promoId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  data      String?
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  message     String
+  imageUrl    String?
+  buttonText  String?
+  buttonUrl   String?
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  sentCount   Int      @default(0)
+  createdById String
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String
+  entityType String
+  entityId   String?
+  userId     String?
+  adminId    String?
+  metadata   String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  isActive  Boolean  @default(true)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model BotConfig {
+  id          String   @id @default("default")
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model DailyStats {
+  id                  String   @id @default(uuid())
+  date                DateTime @unique
+  newUsers            Int      @default(0)
+  activeUsers         Int      @default(0)
+  tasksCompleted      Int      @default(0)
+  rewardsDistributed  Float    @default(0)
+  withdrawalsRequested Int     @default(0)
+  withdrawalsPaid     Int      @default(0)
+  totalEarnings       Float    @default(0)
+  createdAt           DateTime @default(now())
+}

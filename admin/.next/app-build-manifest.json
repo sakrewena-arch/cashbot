@@ -1,0 +1,51 @@
+{
+  "pages": {
+    "/_not-found/page": [
+      "static/chunks/webpack-57586abe07dbe25a.js",
+      "static/chunks/fd9d1056-cf48984c1108c87a.js",
+      "static/chunks/117-1e0683bc7f4a88b0.js",
+      "static/chunks/main-app-6df63e1b4f076538.js",
+      "static/chunks/app/_not-found/page-29569d72a77dd479.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-57586abe07dbe25a.js",
+      "static/chunks/fd9d1056-cf48984c1108c87a.js",
+      "static/chunks/117-1e0683bc7f4a88b0.js",
+      "static/chunks/main-app-6df63e1b4f076538.js",
+      "static/css/69d762ad278ec082.css",
+      "static/chunks/554-6b4e1c7247691d16.js",
+      "static/chunks/507-01374ce2a1cae57f.js",
+      "static/chunks/app/layout-e0d7ad7b367d8b9f.js"
+    ],
+    "/withdrawals/page": [
+      "static/chunks/webpack-57586abe07dbe25a.js",
+      "static/chunks/fd9d1056-cf48984c1108c87a.js",
+      "static/chunks/117-1e0683bc7f4a88b0.js",
+      "static/chunks/main-app-6df63e1b4f076538.js",
+      "static/chunks/554-6b4e1c7247691d16.js",
+      "static/chunks/app/withdrawals/page-4718555d22ce8120.js"
+    ],
+    "/tasks/page": [
+      "static/chunks/webpack-57586abe07dbe25a.js",
+      "static/chunks/fd9d1056-cf48984c1108c87a.js",
+      "static/chunks/117-1e0683bc7f4a88b0.js",
+      "static/chunks/main-app-6df63e1b4f076538.js",
+      "static/chunks/app/tasks/page-499f69496a1132c3.js"
+    ],
+    "/users/page": [
+      "static/chunks/webpack-57586abe07dbe25a.js",
+      "static/chunks/fd9d1056-cf48984c1108c87a.js",
+      "static/chunks/117-1e0683bc7f4a88b0.js",
+      "static/chunks/main-app-6df63e1b4f076538.js",
+      "static/chunks/app/users/page-d3937864176f4c68.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-57586abe07dbe25a.js",
+      "static/chunks/fd9d1056-cf48984c1108c87a.js",
+      "static/chunks/117-1e0683bc7f4a88b0.js",
+      "static/chunks/main-app-6df63e1b4f076538.js",
+      "static/chunks/554-6b4e1c7247691d16.js",
+      "static/chunks/app/page-d2aefe5ddd6a3c3d.js"
+    ]
+  }
+}
