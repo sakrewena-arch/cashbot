@@ -1,11 +1,10 @@
 {
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "cd admin && npm install && npm run build && cd .. && npm install --include=dev && npx prisma generate && npx tsc"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
     "numReplicas": 1,
-    "startCommand": "node dist/index.js",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE",
     "sleepApplication": false
