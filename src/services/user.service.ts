@@ -200,6 +200,16 @@ export class UserService {
   }
 
   /**
+   * Marque les canaux comme vérifiés pour un utilisateur
+   */
+  async updateChannelsJoined(userId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { joinedChannels: true, isOnboarded: true },
+    });
+  }
+
+  /**
    * Récupère les statistiques d'un utilisateur
    */
   async getUserStats(userId: string): Promise<any> {

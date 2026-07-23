@@ -47,6 +47,26 @@ export const BOT_MESSAGES = {
   notificationsInfo: "📨 *Notifications*\n\nTu n'as aucune notification non lue.",
   supportInfo: ['❓ *Support*', '', "Besoin d'aide ? Contacte notre support :", '', '📧 Email : support@cashbot.com', '💬 Telegram : @CashbotSupport'].join('\n'),
   settingsInfo: ['⚙ *Paramètres*', '', '🌍 Langue : Français', '🔔 Notifications : Activées', '', "Plus d'options bientôt disponibles !"].join('\n'),
+  joinChannels: ['📢 *Rejoins nos canaux*', '', "Pour utiliser le bot, tu dois d'abord rejoindre tous les canaux ci-dessous.", '', 'Clique sur chaque canal pour le rejoindre, puis appuie sur ✅ Vérifier.'].join('\n'),
+  taskList: function(tasks: any[]): string {
+    if (tasks.length === 0) return "📭 *Aucune tâche disponible pour le moment.*\n\nReviens plus tard !";
+    var lines = tasks.map(function(t: any, i: number) { return (i + 1) + '. ' + t.icon + ' *' + t.title + '* - ' + t.reward + ' €'; });
+    return '🎯 *Tâches Disponibles*\n\n' + lines.join('\n');
+  },
+  taskDetail: function(task: any): string {
+    var lines = ['*' + task.icon + ' ' + task.title + '*', '', '📝 *Description :*', task.description || 'Aucune description', '', '💰 *Récompense :* ' + task.reward + ' €', '👥 *Participants :* ' + task.currentParticipants + '/' + (task.maxParticipants || '∞')];
+    if (task.instructions) { lines.push(''); lines.push('📋 *Instructions :*'); lines.push(task.instructions); }
+    return lines.join('\n');
+  },
+  dailyBonusClaimed: function(amount: string, streak: number): string {
+    return ['🎁 *Bonus quotidien réclamé !*', '', '💰 +' + amount + ' €', '🔥 Série : ' + streak + ' jours', '', 'Reviens demain pour ton prochain bonus !'].join('\n');
+  },
+  promoCodeUsed: function(code: string, reward: string): string {
+    return ['🎟 *Code promo utilisé !*', '', 'Code : ' + code, '💰 Récompense : +' + reward + ' €'].join('\n');
+  },
+  withdrawalRequested: function(amount: string): string {
+    return ['✅ *Demande de retrait soumise*', '', '💰 Montant : ' + amount + ' €', '⏳ Statut : En attente de validation', '', 'Tu seras notifié dès que ton retrait sera traité.'].join('\n');
+  },
   error: "❌ *Une erreur est survenue*\n\nVeuillez réessayer plus tard.\nSi le problème persiste, contacte le support.",
   notRegistered: "⚠️ *Tu n'es pas encore inscrit !*\n\nUtilise /start pour créer ton compte.",
   notAvailable: "⚠️ *Non disponible*\n\nCette fonctionnalité n'est pas encore disponible.",
