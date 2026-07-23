@@ -147,16 +147,14 @@ router.get('/tasks', async (req: Request, res: Response) => {
 // Créer une tâche (admin)
 router.post('/tasks', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const task = await prisma.task.create({
-      data: {
-        ...req.body,
-        createdById: req.body.adminId || 'admin',
-      },
-    });
+    const data = { ...req.body, createdById: req.body.adminId || 'admin' };
+    // Nettoyer les champs vides
+    if (data.maxParticipants === 0) delete data.maxParticipants;
+    const task = await prisma.task.create({ data });
     res.status(201).json(task);
-  } catch (error) {
-    logger.error('Erreur POST /tasks', { error });
-    res.status(500).json({ error: 'Erreur lors de la création' });
+  } catch (error: any) {
+    logger.error('Erreur POST /tasks', { error: error.message });
+    res.status(500).json({ error: error.message || 'Erreur lors de la création' });
   }
 });
 
