@@ -3,9 +3,11 @@
 // ============================================================
 
 import { Telegraf, Markup } from 'telegraf';
+import prisma from '../helpers/prisma';
 import { BOT_CONFIG, BOT_MESSAGES, ADMIN_CONFIG, BOT_CONSTANTS } from '../config';
 import { userService } from '../services/user.service';
 import { transactionService } from '../services/transaction.service';
+import { taskService } from '../services/task.service';
 import logger from '../helpers/logger';
 
 export class BotController {
@@ -248,17 +250,37 @@ export class BotController {
     this.bot.action('menu', async (ctx: any) => { await ctx.answerCbQuery(); await this.showMainMenu(ctx); });
 
     this.bot.action('check_channels', async (ctx: any) => {
-      await ctx.answerCbQuery('🔍 Vérification...');
+      await ctx.answerCbQuery('🔍 Vérification des canaux...');
       try {
         const user = await userService.getByTelegramId(String(ctx.from.id));
-        if (user) {
-          await userService.updateChannelsJoined(user.id);
+        if (!user) return;
+        
+        const { allJoined, channels } = await taskService.checkAllRequiredChannels(user.id);
+        
+        if (allJoined) {
+          await ctx.reply('✅ *Tous les canaux sont vérifiés !*\n\nTu peux maintenant accéder au menu principal.', {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([[Markup.button.callback('📋 Menu Principal', 'menu')]]),
+          });
+        } else {
+          let msg = '⚠️ *Tu n\'as pas encore rejoint tous les canaux :*\n\n';
+          for (const ch of channels) {
+            msg += `${ch.isMember ? '✅' : '❌'} ${ch.channelName}\n`;
+          }
+          msg += '\nRejoins tous les canaux puis réessaie.';
+          await ctx.reply(msg, {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+              ...channels.map((ch: any) => [Markup.button.url(`📢 ${ch.channelName}`, ch.channelUrl || `https://t.me/${ch.channelName}`)]),
+              [Markup.button.callback('🔄 Revérifier', 'check_channels')],
+              [Markup.button.callback('📋 Menu Principal', 'menu')],
+            ]),
+          });
         }
-      } catch {}
-      await ctx.reply('✅ *Vérification réussie !*\n\nTu peux accéder au menu principal.', {
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([[Markup.button.callback('📋 Menu Principal', 'menu')]]),
-      });
+      } catch (error) {
+        logger.error('Erreur check_channels', { error });
+        await ctx.reply(BOT_MESSAGES.error, { parse_mode: 'Markdown' });
+      }
     });
 
     this.bot.action('balance', async (ctx: any) => {
@@ -460,6 +482,60 @@ export class BotController {
         ...Markup.inlineKeyboard([[Markup.button.callback('🔙 Retour', 'menu')]]),
       });
     });
+
+    // Validation des tâches de type canal/groupe
+    this.bot.action(/^validate_(.+)$/, async (ctx: any) => {
+      const taskId = ctx.match[1];
+      await ctx.answerCbQuery('🔍 Vérification...');
+      try {
+        const user = await userService.getByTelegramId(String(ctx.from.id));
+        if (!user) return;
+        const result = await taskService.validateChannelTask(user.id, taskId);
+        await ctx.reply(result.message, {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([[Markup.button.callback('🔙 Retour', 'menu')]]),
+        });
+      } catch (error: any) {
+        await ctx.reply(`❌ ${error.message}`, { parse_mode: 'Markdown' });
+      }
+    });
+
+    // Validation automatique (visite, etc.)
+    this.bot.action(/^auto_(.+)$/, async (ctx: any) => {
+      const taskId = ctx.match[1];
+      await ctx.answerCbQuery('✅ Validation...');
+      try {
+        const user = await userService.getByTelegramId(String(ctx.from.id));
+        if (!user) return;
+        const task = await prisma.task.findUnique({ where: { id: taskId } });
+        if (!task) return;
+        const result = await taskService.validateChannelTask(user.id, taskId);
+        // Si pas de targetChannelId, la tâche est simplement créditée
+        if (!task.targetChannelId) {
+          await transactionService.creditTaskReward(user.id, taskId, task.reward);
+          await ctx.reply(`✅ *Tâche complétée !*\n\n+${task.reward} €`, {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([[Markup.button.callback('🔙 Retour', 'menu')]]),
+          });
+        } else {
+          await ctx.reply(result.message, { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('🔙 Retour', 'menu')]]) });
+        }
+      } catch (error: any) {
+        await ctx.reply(`❌ ${error.message}`, { parse_mode: 'Markdown' });
+      }
+    });
+
+    // Envoyer une preuve
+    this.bot.action(/^proof_(.+)$/, async (ctx: any) => {
+      const taskId = ctx.match[1];
+      await ctx.answerCbQuery('📤 Envoie ta preuve...');
+      ctx.session = ctx.session || {};
+      ctx.session.proofTaskId = taskId;
+      ctx.session.step = 'awaiting_proof_text';
+      await ctx.reply('📤 *Envoie ta preuve*\n\nDécris ce que tu as fait ou envoie un lien :', {
+        parse_mode: 'Markdown',
+      });
+    });
   }
 
   private setupHears(): void {
@@ -505,8 +581,10 @@ export class BotController {
         }
         if (task.validationMode === 'MANUAL') {
           buttons.push([Markup.button.callback('📤 Envoyer une preuve', 'proof_' + task.id)]);
+        } else if (task.type === 'JOIN_CHANNEL' || task.type === 'JOIN_GROUP') {
+          buttons.push([Markup.button.callback('✅ Vérifier et valider', 'validate_' + task.id)]);
         } else {
-          buttons.push([Markup.button.callback('✅ Valider', 'validate_' + task.id)]);
+          buttons.push([Markup.button.callback('✅ Valider', 'auto_' + task.id)]);
         }
         buttons.push([Markup.button.callback('🔙 Retour au menu', 'menu')]);
 
