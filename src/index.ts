@@ -17,11 +17,11 @@ async function main() {
   });
 
   try {
+    // 1. Connexion DB
     await prisma.$connect();
     logger.info('✅ Base de données connectée');
 
-    await botController.start();
-
+    // 2. Démarrer le serveur Express en premier (pour le healthcheck)
     const app = express();
 
     app.use(helmet({ contentSecurityPolicy: false }));
@@ -29,14 +29,11 @@ async function main() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
 
-    // Servir le dashboard admin (Next.js build)
+    // Servir le dashboard admin
     const adminPath = path.join(__dirname, '../admin/out');
     app.use(express.static(adminPath));
-    
-    // Routes API
-    app.use('/api', require('./routes/api').default);
 
-    // Health check
+    // Health check (TOUT PREMIER)
     app.get('/health', (req, res) => {
       res.json({
         status: 'ok',
@@ -47,7 +44,10 @@ async function main() {
       });
     });
 
-    // Rediriger toutes les routes admin vers index.html
+    // Routes API
+    app.use('/api', require('./routes/api').default);
+
+    // Redirection admin
     app.get('*', (req, res) => {
       if (!req.path.startsWith('/api') && !req.path.startsWith('/health')) {
         res.sendFile(path.join(adminPath, 'index.html'));
@@ -62,11 +62,13 @@ async function main() {
       });
     }
 
+    // Gestion erreurs
     app.use((err: any, req: any, res: any, next: any) => {
       logger.error('Erreur serveur', { error: err.message });
       res.status(500).json({ error: 'Erreur interne du serveur' });
     });
 
+    // Démarrage serveur (AVANT le bot)
     app.listen(API_CONFIG.port, () => {
       logger.info(`✅ Serveur démarré sur le port ${API_CONFIG.port}`);
       logger.info(`🌐 API: ${API_CONFIG.url}/api`);
@@ -74,10 +76,11 @@ async function main() {
       logger.info(`📊 Admin: ${API_CONFIG.url}`);
     });
 
-    require('./jobs/cron');
+    // 3. Démarrer le bot Telegram (après le serveur)
+    await botController.start();
 
-    process.once('SIGINT', async () => { await shutdown(); });
-    process.once('SIGTERM', async () => { await shutdown(); });
+    // 4. Jobs CRON
+    require('./jobs/cron');
 
     logger.info(`✅ ${PROJECT_INFO.name} est prêt !`);
   } catch (error) {
