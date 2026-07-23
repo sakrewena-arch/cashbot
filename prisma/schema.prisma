@@ -1,6 +1,5 @@
 // ============================================================
-// CASHBOT - Prisma Schema (SQLite pour développement)
-// Pour Supabase, utiliser le fichier schema.supabase.prisma
+// CASHBOT - Prisma Schema (SQLite)
 // ============================================================
 
 generator client {
@@ -64,7 +63,6 @@ model RequiredChannel {
   orderIndex  Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
   checks      UserChannelCheck[]
 }
 
@@ -74,10 +72,8 @@ model UserChannelCheck {
   channelId String
   isMember  Boolean  @default(false)
   checkedAt DateTime @default(now())
-  
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   channel   RequiredChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  
   @@unique([userId, channelId])
 }
 
@@ -90,40 +86,29 @@ model Task {
   videoUrl            String?
   linkUrl             String?
   icon                String  @default("🎯")
-  
   reward              Float   @default(0)
   currency            String  @default("EUR")
-  
   maxParticipants     Int?
   maxPerUser          Int     @default(1)
   currentParticipants Int     @default(0)
-  
   startDate           DateTime?
   endDate             DateTime?
   minTimeMinutes      Int?
   durationMinutes     Int?
-  
   categoryId          String?
-  allowedCountries    String  @default("[]")
-  allowedLanguages    String  @default("[]")
   requiredLevel       Int     @default(0)
-  
   type                String
   validationMode      String
   proofType           String?
   status              String  @default("DRAFT")
-  
   webhookUrl          String?
   apiEndpoint         String?
   apiKey              String?
-  
   targetChannelId     String?
   targetGroupId       String?
-  
   createdById         String
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
-  
   category            TaskCategory? @relation(fields: [categoryId], references: [id])
   completions         TaskCompletion[]
 }
@@ -137,7 +122,6 @@ model TaskCategory {
   isActive    Boolean  @default(true)
   orderIndex  Int      @default(0)
   createdAt   DateTime @default(now())
-  
   tasks       Task[]
 }
 
@@ -146,23 +130,18 @@ model TaskCompletion {
   userId          String
   taskId          String
   status          String   @default("PENDING")
-  
   progress        Int      @default(0)
   maxProgress     Int      @default(1)
   attempts        Int      @default(0)
-  
   validatedById   String?
   validatedAt     DateTime?
   rejectionReason String?
   adminComment    String?
-  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   proofs          Proof[]
-  
   @@unique([userId, taskId])
 }
 
@@ -176,9 +155,7 @@ model Proof {
   content      String?
   mimeType     String?
   fileSize     Int?
-  
   createdAt    DateTime        @default(now())
-  
   completion   TaskCompletion  @relation(fields: [completionId], references: [id], onDelete: Cascade)
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -194,9 +171,7 @@ model Transaction {
   status        String   @default("COMPLETED")
   description   String?
   reference     String?
-  
   createdAt     DateTime @default(now())
-  
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -211,10 +186,8 @@ model Withdrawal {
   adminComment  String?
   processedById String?
   processedAt   DateTime?
-  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -230,7 +203,6 @@ model PromoCode {
   startsAt    DateTime?
   expiresAt   DateTime?
   createdAt   DateTime @default(now())
-  
   users       UserPromoCode[]
 }
 
@@ -239,10 +211,8 @@ model UserPromoCode {
   userId  String
   promoId String
   usedAt  DateTime @default(now())
-  
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   promoCode PromoCode @relation(fields: [promoId], references: [id], onDelete: Cascade)
-  
   @@unique([userId, promoId])
 }
 
@@ -255,9 +225,7 @@ model Notification {
   data      String?
   isRead    Boolean  @default(false)
   readAt    DateTime?
-  
   createdAt DateTime @default(now())
-  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
