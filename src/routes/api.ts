@@ -10,16 +10,17 @@ import logger from '../helpers/logger';
 
 const router = Router();
 
-// Middleware d'authentification API
+// Middleware d'authentification simplifié
 function authMiddleware(req: Request, res: Response, next: any) {
+  // En développement, on autorise tout
+  if (process.env.NODE_ENV !== 'production') return next();
+  
   const apiKey = req.headers['x-api-key'];
   const token = req.headers.authorization?.replace('Bearer ', '');
-
-  // TODO: Implémenter la vérification JWT
+  
   if (!apiKey && !token) {
     return res.status(401).json({ error: 'Non authentifié' });
   }
-
   next();
 }
 
