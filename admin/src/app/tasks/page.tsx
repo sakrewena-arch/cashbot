@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { Plus, Search, Edit3, Copy, Trash2, X } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
 import { formatCurrency, getStatusColor, getStatusLabel } from '@/lib/utils'
 
 export default function TasksPage() {
+  const { showToast } = useToast()
   const [tasks, setTasks] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -32,8 +34,9 @@ export default function TasksPage() {
       setShowForm(false)
       setForm({ title: '', description: '', instructions: '', icon: '🎯', reward: 0, type: 'JOIN_CHANNEL', validationMode: 'AUTO', proofType: '', linkUrl: '', maxPerUser: 1, maxParticipants: 0 })
       load()
+      showToast('success', '✅ Tâche créée avec succès !')
     } catch (e) {
-      alert('Erreur lors de la création')
+      showToast('error', '❌ Erreur lors de la création')
     }
   }
 

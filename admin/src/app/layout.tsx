@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
-import { Toaster } from 'sonner'
+import { ToastProvider } from '@/components/ui/toast'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 
@@ -16,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={inter.className}>
+        <ToastProvider>
         <div className="flex h-screen overflow-hidden">
           {/* Sidebar desktop */}
           <div className="hidden lg:flex">
@@ -58,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
           </div>
         </div>
-        <Toaster position="top-right" richColors />
+        </ToastProvider>
       </body>
     </html>
   )
