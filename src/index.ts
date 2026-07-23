@@ -76,8 +76,10 @@ async function main() {
       logger.info(`📊 Admin: ${API_CONFIG.url}`);
     });
 
-    // 3. Démarrer le bot Telegram (après le serveur)
-    await botController.start();
+    // 3. Démarrer le bot Telegram (non-bloquant)
+    botController.start().catch((err: any) => {
+      logger.error('⚠️ Bot Telegram non disponible', { error: err.message });
+    });
 
     // 4. Jobs CRON
     require('./jobs/cron');
