@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Link2, Plus, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useToast } from '@/components/ui/toast'
 
 export default function ChannelsPage() {
+  const { showToast } = useToast()
   const [channels, setChannels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -18,16 +20,28 @@ export default function ChannelsPage() {
   useEffect(() => { load() }, [])
 
   const handleCreate = async () => {
-    await api.createChannel(form)
-    setShowForm(false)
-    setForm({ channelId: '', channelName: '', channelUrl: '' })
-    load()
+    if (!form.channelId || !form.channelName) {
+      showToast('error', '❌ Remplis tous les champs obligatoires')
+      return
+    }
+    try {
+      await api.createChannel(form)
+      setShowForm(false)
+      setForm({ channelId: '', channelName: '', channelUrl: '' })
+      load()
+      showToast('success', '✅ Canal ajouté avec succès !')
+    } catch (e: any) {
+      showToast('error', `❌ ${e.message}`)
+    }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Supprimer ce canal ?')) {
+    try {
       await api.deleteChannel(id)
       load()
+      showToast('success', '✅ Canal supprimé')
+    } catch (e: any) {
+      showToast('error', `❌ ${e.message}`)
     }
   }
 
@@ -35,23 +49,27 @@ export default function ChannelsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-bold">Canaux obligatoires</h1><p className="text-sm text-gray-500">Canaux à rejoindre avant d'utiliser le bot</p></div>
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">
-          <Plus className="h-4 w-4" /> Ajouter un canal
+        <button onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">
+          <Plus className="h-4 w-4" /> {showForm ? 'Fermer' : 'Ajouter un canal'}
         </button>
       </div>
 
       {showForm && (
         <div className="max-w-lg rounded-xl border bg-white p-6 shadow-sm space-y-4">
-          <input type="text" placeholder="ID du canal (ex: -1001234567890)" value={form.channelId}
+          <input type="text" placeholder="ID du canal (ex: -1001234567890) *" value={form.channelId}
             onChange={(e) => setForm({ ...form, channelId: e.target.value })}
             className="w-full rounded-lg border p-2.5 text-sm outline-none focus:border-primary" />
-          <input type="text" placeholder="Nom du canal" value={form.channelName}
+          <input type="text" placeholder="Nom du canal *" value={form.channelName}
             onChange={(e) => setForm({ ...form, channelName: e.target.value })}
             className="w-full rounded-lg border p-2.5 text-sm outline-none focus:border-primary" />
-          <input type="text" placeholder="URL du canal (ex: https://t.me/cashbot)" value={form.channelUrl}
+          <input type="text" placeholder="URL du canal" value={form.channelUrl}
             onChange={(e) => setForm({ ...form, channelUrl: e.target.value })}
             className="w-full rounded-lg border p-2.5 text-sm outline-none focus:border-primary" />
-          <button onClick={handleCreate} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">Ajouter</button>
+          <button onClick={handleCreate} disabled={!form.channelId || !form.channelName}
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
+            Ajouter
+          </button>
         </div>
       )}
 

@@ -1,17 +1,21 @@
 // ============================================================
-// CASHBOT - Client API pour le tableau de bord
+// CASHBOT - Client API (fonctionne en static & dev)
 // ============================================================
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}/api${endpoint}`, {
+  // En développement Next.js (port 3000), on doit appeler le port 3001
+  // En production (servi par Express), l'URL relative suffit
+  const base = typeof window !== 'undefined' && window.location.port === '3000'
+    ? 'http://localhost:3001'
+    : ''
+
+  const res = await fetch(`${base}/api${endpoint}`, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
-  return data;
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`)
+  return data
 }
 
 export const api = {
@@ -32,4 +36,4 @@ export const api = {
   getPromoCodes: () => fetchAPI('/promocodes'),
   createPromoCode: (data: any) => fetchAPI('/promocodes', { method: 'POST', body: JSON.stringify(data) }),
   createAnnouncement: (data: any) => fetchAPI('/announcements', { method: 'POST', body: JSON.stringify(data) }),
-};
+}
