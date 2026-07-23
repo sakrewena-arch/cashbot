@@ -27,4 +27,4 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/admin/out ./admin/out
 EXPOSE 3001
-CMD node dist/index.js
+CMD npx prisma db push --skip-generate 2>/dev/null; node dist/index.js
