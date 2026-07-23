@@ -124,15 +124,19 @@ export class TransactionService {
         OR: [{ startDate: null }, { startDate: { lte: now } }],
         AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
       },
-      include: {
-        category: true,
-        completions: { where: { userId } },
-      },
+      include: { category: true },
       orderBy: { createdAt: 'desc' },
     });
 
+    // Vérifier les complétions séparément
+    const completions = await prisma.taskCompletion.findMany({
+      where: { userId },
+      select: { taskId: true },
+    });
+    const completedTaskIds = new Set(completions.map((c: any) => c.taskId));
+
     return tasks.filter((task: any) => {
-      if (task.completions.length >= task.maxPerUser) return false;
+      if (completedTaskIds.has(task.id)) return false;
       if (task.maxParticipants && task.currentParticipants >= task.maxParticipants) return false;
       return true;
     });
